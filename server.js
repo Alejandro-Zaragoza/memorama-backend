@@ -37,19 +37,29 @@ app.post('/api/register', (req, res) => {
   });
 });
 
-// Ruta para login
+// Ruta para login con logs para depurar
 app.post('/api/login', (req, res) => {
+  console.log('Login recibido:', req.body);
+
   const { correo, contrasena } = req.body;
 
   if (!correo || !contrasena) {
+    console.log('Faltan correo o contraseña');
     return res.status(400).json({ error: 'Correo y contraseña son obligatorios' });
   }
 
   const query = `SELECT * FROM usuarios WHERE correo = ? AND contrasena = ?`;
   db.get(query, [correo, contrasena], (err, user) => {
-    if (err) return res.status(500).json({ error: 'Error al buscar usuario' });
-    if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
+    if (err) {
+      console.log('Error al buscar usuario:', err);
+      return res.status(500).json({ error: 'Error al buscar usuario' });
+    }
+    if (!user) {
+      console.log('Usuario no encontrado o contraseña incorrecta');
+      return res.status(401).json({ error: 'Credenciales inválidas' });
+    }
 
+    console.log('Login exitoso para usuario:', user);
     res.json({ message: 'Inicio de sesión exitoso', userId: user.id, nombre: user.nombre });
   });
 });
@@ -84,6 +94,14 @@ app.get('/api/scores', (req, res) => {
   });
 });
 
+// Ruta para obtener todos los usuarios registrados (sin contraseñas por seguridad)
+app.get('/api/usuarios', (req, res) => {
+  const query = `SELECT id, nombre, correo FROM usuarios`;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Error al obtener usuarios' });
+    res.json(rows);
+  });
+});
 
 // Iniciar servidor
 app.listen(PORT, () => {
